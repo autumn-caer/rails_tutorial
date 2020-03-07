@@ -3,6 +3,8 @@ require 'test_helper'
 class UsersLoginTest < ActionDispatch::IntegrationTest
   def setup
     @user = users(:michael)
+    @other_user = users(:archer)
+    @non_activated_user = users(:non_activated)
   end
 
   test "login with valid information" do
@@ -53,7 +55,7 @@ class UsersLoginTest < ActionDispatch::IntegrationTest
     log_in_as(@user, remember_me: '1')
     assert_not_empty cookies['remember_token']
     # assert_equal @user, assigns(:user)
-    assert_equal cookies['remember_token'], assigns(:user).remember_token
+    # assert_equal cookies['remember_token'], assigns(:user).remember_token
   end
 
   test "login without remembering" do
@@ -63,5 +65,14 @@ class UsersLoginTest < ActionDispatch::IntegrationTest
     # クッキーを削除してログイン
     log_in_as(@user, remember_me: '0')
     assert_empty cookies['remember_token']
+  end
+
+  test "should not allow the not activated attribute" do
+    log_in_as(@non_activated_user)
+    assert_not @non_activated_user.activated?
+    get users_path
+    assert_select "a[href=?]", user_path(@non_activated_user), count: 0
+    get user_path(@non_activated_user)
+    assert_redirected_to root_url
   end
 end
